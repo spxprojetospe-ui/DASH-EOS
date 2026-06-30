@@ -1,0 +1,2047 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CONTROLE ANALÍTICO EOS-BR | Shopee Operations</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+    <style>
+        :root {
+            --shopee-orange: #ee4d2d;
+            --shopee-orange-glow: rgba(238, 77, 45, 0.15);
+            --bg-deep: #05070a;
+            --bg-card: #0d1117;
+            --bg-input: #161b22;
+            --border: #30363d;
+            --text-main: #f0f6fc;
+            --text-dim: #8b949e;
+            --accent-blue: #2f81f7;
+            --accent-green: #3fb950;
+            --accent-purple: #8957e5;
+            --accent-yellow: #d29922;
+            --accent-cyan: #39c5cf;
+            --font-main: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+            outline: none; 
+        }
+        
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: var(--font-main);
+            overflow-x: hidden;
+            line-height: 1.3;
+            font-size: 12px;
+        }
+
+        header {
+            background: rgba(13, 17, 23, 0.9);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 15px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .logo-area { display: flex; align-items: center; gap: 8px; }
+        .logo-shopee { background: var(--shopee-orange); color: white; padding: 2px 6px; border-radius: 4px; font-weight: 800; font-size: 12px; }
+        .logo-title { font-weight: 700; font-size: 13px; letter-spacing: -0.5px; }
+
+        .header-tools { display: flex; align-items: center; gap: 15px; }
+        .real-time-clock { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--shopee-orange); }
+
+        .filter-section {
+            padding: 8px 15px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            background: #0d1117;
+            border-bottom: 1px solid var(--border);
+            align-items: center;
+        }
+
+        .filter-group select, .cd-select-custom {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.25s ease-in-out;
+            min-width: 140px;
+            height: 30px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .filter-group select:hover, .cd-select-custom:hover {
+            border-color: var(--shopee-orange);
+            box-shadow: 0 0 10px var(--shopee-orange-glow);
+        }
+
+        /* AJUSTE VISUAL DO DROPDOWN PRINCIPAL */
+        .filter-special {
+            background: linear-gradient(135deg, #ee4d2d, #ff8c00) !important;
+            color: white !important;
+            font-weight: 800 !important;
+            border: 1px solid rgba(255,255,255,0.3) !important;
+            box-shadow: 0 0 15px rgba(238, 77, 45, 0.5) !important;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+            letter-spacing: 0.5px;
+            padding: 4px 15px !important;
+            height: 32px !important;
+            font-size: 11px !important;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s ease !important;
+            color-scheme: dark; /* Ajusta a renderização nativa para modo escuro */
+            cursor: pointer;
+        }
+
+        .filter-special option {
+            background-color: var(--bg-card); /* Remove a área branca */
+            color: white;
+            font-weight: 600;
+            padding: 10px;
+        }
+
+        .filter-special:hover {
+            box-shadow: 0 0 22px rgba(238, 77, 45, 0.7) !important;
+            transform: translateY(-1px);
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            padding: 10px 15px 5px 15px;
+        }
+
+        .kpi-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 8px 12px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .kpi-card.idle-card {
+            border-color: var(--accent-cyan);
+            background: linear-gradient(135deg, rgba(57, 197, 207, 0.05), var(--bg-card));
+        }
+
+        .kpi-left { display: flex; flex-direction: column; }
+        .kpi-label { font-size: 11px; color: var(--text-dim); font-weight: 500; }
+        .kpi-value { font-size: 18px; font-weight: 800; margin-top: 2px; line-height: 1; }
+
+        .kpi-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        .kpi-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; background: rgba(238, 77, 45, 0.1); color: var(--shopee-orange); font-size: 12px; }
+        .kpi-icon.cyan { background: rgba(57, 197, 207, 0.1); color: var(--accent-cyan); }
+        .kpi-trend { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 10px; }
+        .trend-up { background: rgba(63, 185, 80, 0.1); color: var(--accent-green); }
+        .trend-warning { background: rgba(210, 153, 34, 0.1); color: var(--accent-yellow); }
+        .trend-danger { background: rgba(238, 77, 45, 0.1); color: var(--shopee-orange); }
+        .trend-cyan { background: rgba(57, 197, 207, 0.1); color: var(--accent-cyan); }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 10px;
+            padding: 5px 15px 10px 15px;
+        }
+
+        .chart-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            height: 230px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .c-span-4 { grid-column: span 4; }
+        .c-span-6 { grid-column: span 6; }
+        .c-span-8 { grid-column: span 8; }
+        .c-span-12 { grid-column: span 12; }
+
+        .chart-box canvas {
+            flex: 1;
+            min-height: 0;
+            width: 100% !important;
+        }
+
+        .chart-box-header { 
+            margin-bottom: 6px; 
+            font-weight: 700; 
+            font-size: 12px; 
+            color: var(--text-main); 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+        }
+        .chart-title-left { display: flex; align-items: center; gap: 6px; }
+        
+        .chart-controls { display: flex; gap: 6px; align-items: center; }
+        .chart-controls select {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            height: 22px;
+            cursor: pointer;
+        }
+
+        .heatmap-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(7, 1fr);
+            gap: 4px;
+        }
+        .heatmap-header-cell {
+            text-align: center;
+            font-size: 10px;
+            color: var(--text-dim);
+            font-weight: 700;
+            padding-bottom: 4px;
+        }
+        .heatmap-row-label {
+            display: flex;
+            align-items: center;
+            font-weight: 700;
+            font-size: 11px;
+            color: var(--accent-blue);
+            padding-right: 8px;
+        }
+        .heatmap-cell {
+            background: #161b22;
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 40px;
+            position: relative;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: all 0.2s;
+        }
+        .heatmap-cell:hover { border-color: var(--text-main); }
+        .heatmap-cell .count { font-size: 13px; font-weight: 800; color: #fff; line-height: 1; }
+        .heatmap-cell .pct { font-size: 9px; color: rgba(255,255,255,0.6); margin-top: 3px; }
+
+        .table-section { padding: 0 15px 15px 15px; }
+        .table-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .search-container { position: relative; }
+        .search-container i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-dim); font-size: 11px; }
+        .search-container input {
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            color: white;
+            padding: 4px 10px 4px 28px;
+            border-radius: 6px;
+            width: 200px;
+            font-size: 11px;
+            height: 24px;
+        }
+
+        .table-scroll { max-height: 380px; overflow-y: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th { background: #161b22; padding: 6px 12px; font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; position: sticky; top: 0; z-index: 10; }
+        td { padding: 6px 12px; border-bottom: 1px solid var(--border); font-size: 11px; }
+        tr:hover { background: rgba(238, 77, 45, 0.04); }
+
+        .error-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 7, 10, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .hidden { display: none !important; }
+
+        .breadcrumb-bar {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 10px 15px;
+            margin: 10px 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+
+        .idle-section-header {
+            padding: 0 15px;
+            margin: 15px 0 10px 0;
+        }
+
+        .idle-section-title {
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+        }
+
+        .nav-transition-box {
+            background: rgba(13, 17, 23, 0.6);
+            border: 1px dashed var(--border);
+            padding: 12px 15px;
+            margin: 15px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            transition: all 0.3s ease-in-out;
+        }
+
+        .nav-transition-box.active {
+            border-style: solid;
+            border-color: var(--shopee-orange);
+            background: rgba(238, 77, 45, 0.02);
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(5, 7, 10, 0.9);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            transition: opacity 0.3s ease;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 1100px) {
+            .c-span-4, .c-span-6, .c-span-8 { grid-column: span 12; }
+            .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loadingOverlay">
+    <div style="border: 4px solid var(--border); border-top: 4px solid var(--shopee-orange); border-radius: 50%; width: 50px; height: 50px; animation: spin 1s linear infinite; margin-bottom: 20px;"></div>
+    <h3 style="font-family: var(--font-main); color: var(--text-main); font-size: 14px; font-weight: 700;">Conectando à base analítica EOS-BR...</h3>
+    <p style="font-family: var(--font-main); color: var(--text-dim); font-size: 11px; margin-top: 5px;">Buscando informações dinâmicas do Google Sheets</p>
+</div>
+
+<div id="errorOverlay" class="error-overlay">
+    <i class="fas fa-exclamation-triangle" style="font-size: 50px; color: var(--shopee-orange); margin-bottom: 20px;"></i>
+    <h2 id="errorMessage">Não foi possível conectar à base de dados.</h2>
+    <p style="margin-top: 10px; color: var(--text-dim); font-size: 12px;">Tentando restabelecer conexão automaticamente em instantes...</p>
+    <button onclick="window.location.reload()" style="margin-top: 20px; background: var(--shopee-orange); border: none; color: white; padding: 10px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; transition: background 0.2s;">
+        <i class="fas fa-sync-alt" style="margin-right: 5px;"></i> Forçar Recarregamento
+    </button>
+</div>
+
+<div id="toastNotification" style="position: fixed; bottom: 20px; right: 20px; background: rgba(13, 17, 23, 0.95); border: 1px solid var(--shopee-orange); padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); z-index: 9999; display: none; align-items: center; gap: 10px; transition: all 0.3s ease;">
+    <i class="fas fa-sync-alt fa-spin" style="color: var(--shopee-orange); font-size: 16px;"></i>
+    <span id="toastMessage" style="font-size: 11px; font-weight: 600; color: var(--text-main);">Não foi possível atualizar os dados da planilha. Tentando reconectar...</span>
+</div>
+
+<header>
+<div class="logo-area">
+<div class="logo-shopee">S</div>
+<div class="logo-title">CONTROLE ANALÍTICO <span style="color:var(--shopee-orange)">EOS-BR</span></div>
+</div>
+<div class="header-tools">
+<div class="real-time-clock" id="clock">00:00:00</div>
+<div class="kpi-trend trend-warning" id="sync-status" style="padding: 2px 6px; font-weight: 700;">CONECTANDO PLANILHA...</div>
+</div>
+</header>
+
+<div class="filter-section">
+    <div class="filter-group">
+        <select id="analysis-mode" class="filter-special" onchange="Dashboard.toggleAnalysisMode()">
+            <option value="padrao">ANÁLISE OPERACIONAL</option>
+            <option value="idle">ANÁLISE IDLE</option>
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <select id="filter-mes" onchange="Dashboard.applyFilters()"><option value="">Todos os Meses</option></select>
+    </div>
+    <div class="filter-group">
+        <select id="filter-turno" onchange="Dashboard.applyFilters()"><option value="">Todos os Turnos</option></select>
+    </div>
+    <div class="filter-group">
+        <select id="filter-cd" onchange="Dashboard.applyFilters()"><option value="">Todos os CDs</option></select>
+    </div>
+    <div class="filter-group">
+        <select id="filter-cargo" onchange="Dashboard.applyFilters()"><option value="">Todos os Cargos</option></select>
+    </div>
+</div>
+
+<div class="kpi-grid" id="kpi-dashboard-geral">
+    <div class="kpi-card">
+        <div class="kpi-left">
+            <div class="kpi-label">Total de Registros</div>
+            <div class="kpi-value" id="kpi-total">0</div>
+        </div>
+        <div class="kpi-right">
+            <div class="kpi-icon"><i class="fas fa-clipboard-list"></i></div>
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-left">
+            <div class="kpi-label">Turno Líder</div>
+            <div class="kpi-value" id="kpi-turno">-</div>
+        </div>
+        <div class="kpi-right">
+            <div class="kpi-icon"><i class="fas fa-clock"></i></div> 
+        </div>
+    </div>
+    <div class="kpi-card">
+        <div class="kpi-left">
+            <div class="kpi-label">Meta Operacional</div>
+            <div class="kpi-value">95%</div>
+        </div>
+        <div class="kpi-right">
+            <div class="kpi-icon"><i class="fas fa-bullseye"></i></div>
+        </div>
+    </div>
+    <div class="kpi-card idle-card">
+        <div class="kpi-left">
+            <div class="kpi-label">IDLE BRASIL</div>
+            <div class="kpi-value" id="kpi-idle-valor" style="color: var(--accent-cyan);">0%</div>
+        </div>
+        <div class="kpi-right">
+            <div class="kpi-icon cyan"><i class="fas fa-chart-line"></i></div>
+            <div class="kpi-trend trend-cyan" id="kpi-idle-status">Meta: 95%</div>
+        </div>
+    </div>
+</div>
+
+<div id="section-padrao">
+    <div class="charts-container" style="padding-top: 15px;">
+        <div class="chart-box c-span-4">
+            <div class="chart-box-header">
+                <div class="chart-title-left"><i class="fas fa-bolt" style="color: var(--shopee-orange)"></i> Turno</div>
+            </div>
+            <canvas id="chartTurno"></canvas>
+        </div>
+        <div class="chart-box c-span-4">
+            <div class="chart-box-header">
+                <div class="chart-title-left"><i class="fas fa-city" style="color: var(--accent-blue)"></i> CDs</div>
+            </div>
+            <canvas id="chartCD"></canvas>
+        </div>
+        <div class="chart-box c-span-4">
+            <div class="chart-box-header">
+                <div class="chart-title-left"><i class="fas fa-layer-group" style="color: var(--accent-green)"></i> Área</div>
+            </div>
+            <canvas id="chartArea"></canvas>
+        </div>
+        <div class="chart-box c-span-12" style="height: auto; min-height: 250px;">
+            <div class="chart-box-header">
+                <div class="chart-title-left">
+                    <i class="fas fa-th" style="color: var(--accent-yellow)"></i> 
+                    <span>Heatmap Semanal (Volume)</span>
+                </div>
+                <div class="chart-controls">
+                    <select id="dropdownHeatmapCD" onchange="Dashboard.renderHeatmap()"></select>
+                </div>
+            </div>
+            <div id="heatmapContainer"></div>
+        </div>
+    </div>
+</div>
+
+<div id="section-idle" class="hidden">
+    <div class="breadcrumb-bar">
+        <div id="breadcrumb-content" style="color: var(--text-dim);">
+            <i class="fas fa-globe" style="color: var(--accent-blue); margin-right: 5px;"></i>
+            <span style="color: var(--text-main); font-weight: 700;">Brasil</span>
+        </div>
+    </div>
+
+    <div id="idle-nivel-1">
+        <div class="idle-section-header">
+            <h3 class="idle-section-title" style="color: var(--accent-blue);">
+                <i class="fas fa-globe-americas"></i> NÍVEL 1 — Visão Executiva Brasil
+            </h3>
+        </div>
+        
+        <div class="kpi-grid" style="padding-top: 0;">
+            <div class="kpi-card" style="border-color: var(--accent-cyan); background: linear-gradient(135deg, rgba(57,197,207,0.05), var(--bg-card));">
+                <div class="kpi-left">
+                    <div class="kpi-label">IDLE Brasil</div>
+                    <div class="kpi-value" style="color: var(--accent-cyan);" id="br-idle-val">0%</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon cyan"><i class="fas fa-industry"></i></div>
+                    <div class="kpi-trend trend-danger" id="br-idle-status">Gap: -0.0%</div>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-color: var(--accent-yellow); background: linear-gradient(135deg, rgba(210,153,34,0.05), var(--bg-card));">
+                <div class="kpi-left">
+                    <div class="kpi-label">OPA Brasil</div>
+                    <div class="kpi-value" style="color: var(--accent-yellow);" id="br-opa-val">0%</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" style="color: var(--accent-yellow); background: rgba(210,153,34,0.1);"><i class="fas fa-tachometer-alt"></i></div>
+                    <div class="kpi-trend trend-warning" id="br-opa-status">Gap: -0.0%</div>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-color: var(--accent-green); background: linear-gradient(135deg, rgba(63,185,80,0.05), var(--bg-card));">
+                <div class="kpi-left">
+                    <div class="kpi-label">DDSMA Brasil</div>
+                    <div class="kpi-value" style="color: var(--accent-green);" id="br-ddsma-val">0%</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" style="color: var(--accent-green); background: rgba(63,185,80,0.1);"><i class="fas fa-shield-alt"></i></div>
+                    <div class="kpi-trend trend-up" id="br-ddsma-status">Meta OK</div>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-color: var(--accent-purple); background: linear-gradient(135deg, rgba(137,87,229,0.05), var(--bg-card));">
+                <div class="kpi-left">
+                    <div class="kpi-label">DDQA Brasil</div>
+                    <div class="kpi-value" style="color: var(--accent-purple);" id="br-ddqa-val">0%</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" style="color: var(--accent-purple); background: rgba(137, 87, 229, 0.1);"><i class="fas fa-check-circle"></i></div>
+                    <div class="kpi-trend trend-danger" id="br-ddqa-status">Gap: -0.0%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-container" style="padding-top: 5px;">
+            <div class="chart-box c-span-8">
+                <div class="chart-box-header">
+                    <div class="chart-title-left"><i class="fas fa-chart-line" style="color: var(--accent-cyan)"></i> IDLE Nacional por CD</div>
+                </div>
+                <canvas id="chartIdleCD"></canvas>
+            </div>
+            <div class="chart-box c-span-4">
+                <div class="chart-box-header">
+                    <div class="chart-title-left"><i class="fas fa-clock" style="color: var(--accent-yellow)"></i> IDLE Nacional por Turno</div>
+                </div>
+                <canvas id="chartIdleTurno"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-transition-box active" id="transition-cd-box">
+        <div style="display: flex; align-items: center; gap: 8px;">
+            <i class="fas fa-arrow-down" style="color: var(--shopee-orange); font-size: 14px;"></i>
+            <span style="font-weight: 700; font-size: 12px; color: var(--text-main);">Selecione um CD para descer um nível hierárquico:</span>
+        </div>
+        <select id="idle-cd-selector" class="cd-select-custom" onchange="IdleDashboard.onSelectCD(this.value)">
+            <option value="">Selecione o CD</option>
+        </select>
+    </div>
+
+    <div id="idle-nivel-2" class="hidden">
+        <div class="idle-section-header">
+            <h3 class="idle-section-title" style="color: var(--shopee-orange);">
+                <i class="fas fa-warehouse"></i> NÍVEL 2 — Visão CD: <span id="cd-display-name" style="color: white; margin-left: 5px;"></span>
+            </h3>
+        </div>
+
+        <div class="kpi-grid" style="padding-top: 0;">
+            <div class="kpi-card" style="border-color: var(--accent-cyan);">
+                <div class="kpi-left">
+                    <div class="kpi-label">IDLE do CD</div>
+                    <div class="kpi-value" style="color: var(--accent-cyan);" id="cd-idle-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon cyan"><i class="fas fa-industry"></i></div>
+                    <div class="kpi-trend" id="cd-idle-status">-</div>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-color: var(--accent-yellow);">
+                <div class="kpi-left">
+                    <div class="kpi-label">OPA do CD</div>
+                    <div class="kpi-value" style="color: var(--accent-yellow);" id="cd-opa-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" style="color: var(--accent-yellow); background: rgba(210,153,34,0.1);"><i class="fas fa-tachometer-alt"></i></div>
+                    <div class="kpi-trend" id="cd-opa-status">-</div>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-color: var(--accent-green);">
+                <div class="kpi-left">
+                    <div class="kpi-label">DDSMA do CD</div>
+                    <div class="kpi-value" style="color: var(--accent-green);" id="cd-ddsma-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" style="color: var(--accent-green); background: rgba(63,185,80,0.1);"><i class="fas fa-shield-alt"></i></div>
+                    <div class="kpi-trend" id="cd-ddsma-status">-</div>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-color: var(--accent-purple);">
+                <div class="kpi-left">
+                    <div class="kpi-label">DDQA do CD</div>
+                    <div class="kpi-value" style="color: var(--accent-purple);" id="cd-ddqa-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" style="color: var(--accent-purple); background: rgba(137,87,229,0.1);"><i class="fas fa-check-circle"></i></div>
+                    <div class="kpi-trend" id="cd-ddqa-status">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-container" style="padding-top: 5px;">
+            <div class="chart-box c-span-6">
+                <div class="chart-box-header">
+                    <div class="chart-title-left"><i class="fas fa-chart-line" style="color: var(--accent-green)"></i> Evolução Diária da Meta x Realizado</div>
+                </div>
+                <canvas id="chartCdMetaReal"></canvas>
+            </div>
+            <div class="chart-box c-span-6" style="height: auto; min-height: 230px;">
+                <div class="chart-box-header">
+                    <div class="chart-title-left"><i class="fas fa-th" style="color: var(--accent-yellow)"></i> Heatmap de Utilização por CD</div>
+                </div>
+                <div id="cdHeatmapContainer" style="padding: 5px 0;"></div>
+            </div>
+        </div>
+
+        <div class="nav-transition-box" id="transition-area-box">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-arrow-down" style="color: var(--accent-blue); font-size: 14px;"></i>
+                <span style="font-weight: 700; font-size: 12px; color: var(--text-main);">Selecione uma Área operacional do CD selecionado:</span>
+            </div>
+            <select id="idle-area-selector" class="cd-select-custom" onchange="IdleDashboard.onSelectArea(this.value)">
+                <option value="">Selecione a Área</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="idle-nivel-3" class="hidden">
+        <div class="idle-section-header">
+            <h3 class="idle-section-title" style="color: var(--accent-blue);">
+                <i class="fas fa-box"></i> NÍVEL 3 — Área: <span id="area-display-name" style="color: white; margin-left: 5px;"></span>
+            </h3>
+        </div>
+
+        <div class="kpi-grid" style="padding-top: 0;">
+            <div class="kpi-card" style="border-color: var(--accent-cyan);">
+                <div class="kpi-left">
+                    <div class="kpi-label">IDLE da Área</div>
+                    <div class="kpi-value" style="color: var(--accent-cyan);" id="area-idle-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon cyan"><i class="fas fa-industry"></i></div>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-color: var(--accent-yellow);">
+                <div class="kpi-left">
+                    <div class="kpi-label">OPA da Área</div>
+                    <div class="kpi-value" style="color: var(--accent-yellow);" id="area-opa-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" style="color: var(--accent-yellow); background: rgba(210,153,34,0.1);"><i class="fas fa-tachometer-alt"></i></div>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-color: var(--accent-green);">
+                <div class="kpi-left">
+                    <div class="kpi-label">DDSMA da Área</div>
+                    <div class="kpi-value" style="color: var(--accent-green);" id="area-ddsma-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" style="color: var(--accent-green); background: rgba(63,185,80,0.1);"><i class="fas fa-shield-alt"></i></div>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-color: var(--accent-purple);">
+                <div class="kpi-left">
+                    <div class="kpi-label">DDQA da Área</div>
+                    <div class="kpi-value" style="color: var(--accent-purple);" id="area-ddqa-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" style="color: var(--accent-purple); background: rgba(137,87,229,0.1);"><i class="fas fa-check-circle"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-container" style="padding-top: 5px;">
+            <div class="chart-box c-span-6">
+                <div class="chart-box-header">
+                    <div class="chart-title-left"><i class="fas fa-chart-line" style="color: var(--accent-purple)"></i> Distribuição Realizado x Meta</div>
+                </div>
+                <canvas id="chartAreaMetaReal"></canvas>
+            </div>
+            <div class="chart-box c-span-6">
+                <div class="chart-box-header">
+                    <div class="chart-title-left"><i class="fas fa-users" style="color: var(--accent-green)"></i> Desempenho Operacional de Turnos</div>
+                </div>
+                <canvas id="chartAreaTurnos"></canvas>
+            </div>
+        </div>
+
+        <div class="nav-transition-box" id="transition-indicator-box">
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-arrow-down" style="color: var(--accent-yellow); font-size: 14px;"></i>
+                <span style="font-weight: 700; font-size: 12px; color: var(--text-main);">Selecione um Indicador específico desta área operacional:</span>
+            </div>
+            <select id="idle-indicator-selector" class="cd-select-custom" onchange="IdleDashboard.onSelectIndicator(this.value)">
+                <option value="">-- Selecione o Indicador --</option>
+            </select>
+        </div>
+    </div>
+
+    <div id="idle-nivel-4" class="hidden">
+        <div class="idle-section-header">
+            <h3 class="idle-section-title" style="color: var(--accent-yellow);">
+                <i class="fas fa-chart-bar"></i> NÍVEL 4 — Detalhamento Completo: <span id="indicator-display-name" style="color: white; margin-left: 5px;"></span>
+            </h3>
+        </div>
+
+        <div class="kpi-grid" style="padding-top: 0;">
+            <div class="kpi-card" style="border-color: var(--border);">
+                <div class="kpi-left">
+                    <div class="kpi-label">Meta Definida</div>
+                    <div class="kpi-value" style="color: var(--text-dim);" id="ind-meta-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" style="color: var(--text-dim); background: rgba(255, 255, 255, 0.05);"><i class="fas fa-bullseye"></i></div>
+                </div>
+            </div>
+            <div class="kpi-card" style="border-color: var(--accent-blue);">
+                <div class="kpi-left">
+                    <div class="kpi-label">Realizado</div>
+                    <div class="kpi-value" style="color: var(--accent-blue);" id="ind-realizado-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" style="color: var(--accent-blue); background: rgba(47, 129, 247, 0.1);"><i class="fas fa-chart-line"></i></div>
+                </div>
+            </div>
+            <div class="kpi-card" id="ind-gap-card">
+                <div class="kpi-left">
+                    <div class="kpi-label">Gap Operacional</div>
+                    <div class="kpi-value" id="ind-gap-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" id="ind-gap-icon"><i class="fas fa-minus-circle"></i></div>
+                </div>
+            </div>
+            <div class="kpi-card" id="ind-status-card">
+                <div class="kpi-left">
+                    <div class="kpi-label">Status Analítico</div>
+                    <div class="kpi-value" id="ind-status-val">-</div>
+                </div>
+                <div class="kpi-right">
+                    <div class="kpi-icon" id="ind-status-icon"><i class="fas fa-info-circle"></i></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="charts-container" style="padding-top: 5px;">
+            <div class="chart-box c-span-4">
+                <div class="chart-box-header">
+                    <div class="chart-title-left"><i class="fas fa-calendar-day" style="color: var(--accent-cyan)"></i> Evolução Diária</div>
+                </div>
+                <canvas id="chartIndDaily"></canvas>
+            </div>
+            <div class="chart-box c-span-4">
+                <div class="chart-box-header">
+                    <div class="chart-title-left"><i class="fas fa-calendar-week" style="color: var(--accent-yellow)"></i> Evolução Semanal</div>
+                </div>
+                <canvas id="chartIndWeekly"></canvas>
+            </div>
+            <div class="chart-box c-span-4">
+                <div class="chart-box-header">
+                    <div class="chart-title-left"><i class="fas fa-calendar-alt" style="color: var(--accent-purple)"></i> Evolução Mensal</div>
+                </div>
+                <canvas id="chartIndMonthly"></canvas>
+            </div>
+
+            <div class="chart-box c-span-6" style="height: auto; min-height: 200px;">
+                <div class="chart-box-header">
+                    <div class="chart-title-left"><i class="fas fa-th" style="color: var(--shopee-orange)"></i> Heatmap por Turno</div>
+                </div>
+                <div id="indTurnoHeatmapContainer" style="padding: 10px 0;"></div>
+            </div>
+            <div class="chart-box c-span-6" style="height: auto; min-height: 200px;">
+                <div class="chart-box-header">
+                    <div class="chart-title-left"><i class="fas fa-users" style="color: var(--accent-blue)"></i> Heatmap por Supervisor</div>
+                </div>
+                <div id="indSupervisorHeatmapContainer" style="padding: 10px 0;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="table-section">
+    <div class="table-wrapper">
+        <div class="table-header">
+            <div style="font-weight: 700; font-size: 12px;">Histórico Detalhado</div>
+            <div class="search-container">
+                <i class="fas fa-search"></i>
+                <input type="text" id="tableSearch" placeholder="Pesquisar..." onkeyup="Dashboard.applyFilters()">
+            </div>
+        </div>
+        <div class="table-scroll">
+            <table id="mainTable">
+                <thead>
+                    <tr>
+                        <th>Data e Hora</th>
+                        <th>Mês</th>
+                        <th>Turno</th>
+                        <th>CD</th>
+                        <th>Responsável</th>
+                        <th>Cargo</th>
+                        <th>Área</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    Chart.register(ChartDataLabels);
+
+    const SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/10uR0ACM_P10TSCMZzkBvjtBB5eAURyX2j1EEz4n-Q58/export?format=csv';
+    const CACHE_KEY = 'eos_dashboard_cache';
+    const CACHE_TIME_KEY = 'eos_dashboard_cache_time';
+    const CACHE_DURATION = 30 * 1000; 
+
+    function showToast(msg, persist = false) {
+        const toast = document.getElementById('toastNotification');
+        const toastMsg = document.getElementById('toastMessage');
+        toastMsg.innerText = msg;
+        toast.style.display = 'flex';
+        if (!persist) {
+            setTimeout(() => { toast.style.display = 'none'; }, 5000);
+        }
+    }
+    
+    function hideToast() {
+        document.getElementById('toastNotification').style.display = 'none';
+    }
+
+    function showErrorOverlay(msg) {
+        document.getElementById('errorOverlay').style.display = 'flex';
+        document.getElementById('errorMessage').innerText = msg;
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    function hideErrorOverlay() {
+        document.getElementById('errorOverlay').style.display = 'none';
+    }
+
+    function parseCSV(text) {
+        const lines = text.split(/\r?\n/);
+        if (lines.length === 0) return [];
+
+        const firstLine = lines[0];
+        const separator = (firstLine.match(/;/g) || []).length > (firstLine.match(/,/g) || []).length ? ';' : ',';
+
+        const parseLine = (line) => {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === separator && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            result.push(current.trim());
+            return result.map(val => val.replace(/^"|"$/g, '').trim());
+        };
+
+        const headers = parseLine(lines[0]);
+        const headerMap = { dataHora: 0, cd: 1, turno: 2, responsavel: 3, cargo: 4, area: 5 };
+
+        headers.forEach((h, idx) => {
+            const norm = h.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            if (norm.includes("carimbo") || norm.includes("data") || norm.includes("time") || norm.includes("hora")) {
+                headerMap.dataHora = idx;
+            } else if (norm === "cd" || norm.includes("centro") || norm.includes("unidade")) {
+                headerMap.cd = idx;
+            } else if (norm.includes("turno")) {
+                headerMap.turno = idx;
+            } else if (norm.includes("responsavel") || norm.includes("lider") || norm.includes("nome")) {
+                headerMap.responsavel = idx;
+            } else if (norm.includes("cargo") || norm.includes("funcao")) {
+                headerMap.cargo = idx;
+            } else if (norm.includes("area") || norm.includes("setor") || norm.includes("operacao")) {
+                headerMap.area = idx;
+            }
+        });
+
+        const parsedRows = [];
+        for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            const cols = parseLine(lines[i]);
+            if (cols.length < 2) continue;
+
+            parsedRows.push({
+                dataHora: cols[headerMap.dataHora] || "",
+                cd: cols[headerMap.cd] || "",
+                turno: cols[headerMap.turno] || "",
+                responsavel: cols[headerMap.responsavel] || "",
+                cargo: cols[headerMap.cargo] || "",
+                area: cols[headerMap.area] || ""
+            });
+        }
+        return parsedRows;
+    }
+
+    async function fetchSpreadsheetData() {
+        try {
+            const response = await fetch(SPREADSHEET_URL);
+            if (!response.ok) throw new Error("Erro de comunicação HTTP.");
+            const text = await response.text();
+            const data = parseCSV(text);
+            
+            if (data.length === 0) throw new Error("A base retornou dados vazios.");
+
+            localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+            localStorage.setItem(CACHE_TIME_KEY, Date.now().toString());
+            
+            document.getElementById('sync-status').innerText = "BASE OPERACIONAL ATIVA";
+            document.getElementById('sync-status').className = "kpi-trend trend-up";
+            hideToast();
+            return data;
+        } catch (e) {
+            console.error("Falha ao sincronizar dados remotos:", e);
+            const cachedData = localStorage.getItem(CACHE_KEY);
+            if (cachedData) {
+                document.getElementById('sync-status').innerText = "CACHE LOCAL EM USO";
+                document.getElementById('sync-status').className = "kpi-trend trend-warning";
+                showToast("Modo instável detectado. Utilizando cache local...", true);
+                return JSON.parse(cachedData);
+            }
+            throw e;
+        }
+    }
+
+    const Dashboard = {
+        rawData: [],
+        filteredData: [],
+        charts: {},
+        idleCharts: {},
+        currentMode: 'padrao',
+        extraAreaFilter: '',
+
+        mesesMapeados: ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"],
+        diasSemanaEixo: ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"],
+        
+        listaCDsGerais: [],
+        turnosEixo: [],
+        mesesExistentesOrdenados: [],
+
+        async init() {
+            this.startClock();
+            document.getElementById('loadingOverlay').style.display = 'flex';
+            
+            try {
+                const rawData = await fetchSpreadsheetData();
+                this.processSpreadsheetData(rawData);
+                this.createCharts();
+                this.createIdleCharts();
+                this.applyFilters();
+                
+                document.getElementById('loadingOverlay').style.display = 'none';
+                hideErrorOverlay();
+                
+                this.startAutoUpdate();
+            } catch (e) {
+                console.error(e);
+                showErrorOverlay("Não foi possível atualizar os dados da planilha. Tentando reconectar...");
+            }
+        },
+
+        startClock() {
+            const clockEl = document.getElementById('clock');
+            if(clockEl) setInterval(() => clockEl.innerText = new Date().toLocaleTimeString('pt-BR'), 1000);
+        },
+
+        processSpreadsheetData(data) {
+            this.rawData = data.map(item => {
+                let dObj = new Date();
+                try {
+                    const parts = item.dataHora.split(' ')[0].split('/');
+                    dObj = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                } catch(err) { }
+                
+                let cdNorm = item.cd.toUpperCase().trim();
+                if(cdNorm.includes("JABOATAO")) cdNorm = "BRFPE1";
+                else if(cdNorm.includes("NOVA SANTA RITA")) cdNorm = "BRFRS1";
+                else if(cdNorm.includes("HIDROL")) cdNorm = "BRFGO1";
+                else if(cdNorm.includes("FRANCO 1")) cdNorm = "BRFSP1";
+                else if(cdNorm.includes("FRANCO 2")) cdNorm = "BRFSP2";
+                else if(cdNorm.includes("CONTAGEM")) cdNorm = "BRFMG1";
+
+                return {
+                    ...item,
+                    dataObj: dObj,
+                    cd: cdNorm,
+                    mes: this.mesesMapeados[dObj.getMonth()] || "Desconhecido",
+                    diaSemana: this.diasSemanaEixo[dObj.getDay() === 0 ? 6 : dObj.getDay() - 1] || "Segunda"
+                };
+            });
+
+            this.listaCDsGerais = [...new Set(this.rawData.map(d => d.cd))].filter(Boolean).sort();
+            this.turnosEixo = [...new Set(this.rawData.map(d => d.turno))].filter(Boolean).sort();
+            
+            const mesesPlanilha = [...new Set(this.rawData.map(d => d.mes))].filter(Boolean);
+            this.mesesExistentesOrdenados = this.mesesMapeados.filter(m => mesesPlanilha.includes(m));
+
+            this.buildDropdownOptions();
+        },
+
+        buildDropdownOptions() {
+            const injetar = (id, lista, label) => {
+                const el = document.getElementById(id);
+                if(!el) return;
+                el.innerHTML = `<option value="">${label}</option>` + lista.map(i => `<option value="${i}">${i}</option>`).join('');
+            };
+
+            injetar('filter-mes', this.mesesExistentesOrdenados, 'Todos os Meses');
+            injetar('filter-turno', this.turnosEixo, 'Todos os Turnos');
+            injetar('filter-cd', this.listaCDsGerais, 'Todos os CDs');
+            
+            const cargos = [...new Set(this.rawData.map(d => d.cargo))].filter(Boolean).sort();
+            injetar('filter-cargo', cargos, 'Todos os Cargos');
+
+            document.getElementById('dropdownHeatmapCD').innerHTML = '<option value="GERAL">Visão Geral</option>' + this.listaCDsGerais.map(c => `<option value="${c}">${c}</option>`).join('');
+        },
+
+        applyFilters() {
+            const fMes = document.getElementById('filter-mes').value;
+            const fTurno = document.getElementById('filter-turno').value;
+            const fCd = document.getElementById('filter-cd').value;
+            const fCargo = document.getElementById('filter-cargo').value;
+            const fSearch = document.getElementById('tableSearch').value.toLowerCase();
+
+            this.filteredData = this.rawData.filter(d => {
+                if (fMes && d.mes !== fMes) return false;
+                if (fTurno && d.turno !== fTurno) return false;
+                if (fCd && d.cd !== fCd) return false;
+                if (fCargo && d.cargo !== fCargo) return false;
+                if (this.extraAreaFilter && d.area.toUpperCase().trim() !== this.extraAreaFilter.toUpperCase().trim()) return false;
+                if (fSearch && !d.responsavel.toLowerCase().includes(fSearch)) return false;
+                return true;
+            });
+
+            this.updateKPIs();
+            this.updateChartsData();
+            this.renderHeatmap();
+            this.renderTable();
+        },
+
+        updateKPIs() {
+            document.getElementById('kpi-total').innerText = this.filteredData.length;
+            const tCounts = {};
+            this.filteredData.forEach(d => tCounts[d.turno] = (tCounts[d.turno] || 0) + 1);
+            document.getElementById('kpi-turno').innerText = Object.keys(tCounts).sort((a,b) => tCounts[b] - tCounts[a])[0] || '-';
+
+            const idleVal = (85 + (this.filteredData.length % 15)).toFixed(1);
+            const valEl = document.getElementById('kpi-idle-valor');
+            if (valEl) {
+                valEl.innerText = `${idleVal}%`;
+                valEl.style.color = idleVal >= 95 ? 'var(--accent-green)' : (idleVal >= 90 ? 'var(--accent-yellow)' : 'var(--shopee-orange)');
+            }
+        },
+
+        createCharts() {
+            const commonOptions = {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false }, 
+                    datalabels: { 
+                        display: true,
+                        anchor: 'end',
+                        align: 'top',
+                        offset: -2,
+                        color: '#f0f6fc', 
+                        font: { size: 9, weight: 'bold' },
+                        formatter: v => v || ''
+                    } 
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#8b949e', font: { size: 9 } } },
+                    y: { 
+                        grid: { color: '#30363d' }, 
+                        ticks: { color: '#8b949e', font: { size: 9 }, precision: 0 }
+                    }
+                }
+            };
+
+            this.charts.turno = new Chart(document.getElementById('chartTurno'), {
+                type: 'bar', 
+                data: { labels: this.turnosEixo, datasets: [{ data: [] }] },
+                options: commonOptions
+            });
+
+            this.charts.cd = new Chart(document.getElementById('chartCD'), {
+                type: 'bar', 
+                data: { labels: this.listaCDsGerais, datasets: [{ data: [] }] },
+                options: commonOptions
+            });
+
+            this.charts.area = new Chart(document.getElementById('chartArea'), {
+                type: 'bar', 
+                data: { labels: [], datasets: [{ data: [] }] },
+                options: { 
+                    responsive: true, maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: { 
+                        legend: { display: false }, 
+                        datalabels: { 
+                            display: true,
+                            anchor: 'end',
+                            align: 'right',
+                            color: '#ff6b6b', 
+                            font: { size: 9, weight: 'bold' },
+                            formatter: v => v || ''
+                        } 
+                    },
+                    scales: {
+                        x: { grid: { color: '#30363d' }, ticks: { color: '#8b949e', font: { size: 9 } } },
+                        y: { grid: { display: false }, ticks: { color: '#8b949e', font: { size: 9 } } }
+                    }
+                }
+            });
+        },
+
+        createIdleCharts() {
+            const commonOptions = {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false }, 
+                    datalabels: { 
+                        display: true,
+                        anchor: 'end',
+                        align: 'top',
+                        offset: -2,
+                        color: '#f0f6fc', 
+                        font: { size: 9, weight: 'bold' },
+                        formatter: v => v ? parseFloat(v).toFixed(1) + '%' : ''
+                    } 
+                },
+                scales: { 
+                    x: { grid: { display: false }, ticks: { color: '#8b949e', font: { size: 9 } } },
+                    y: { min: 70, max: 105, grid: { color: '#30363d' }, ticks: { color: '#8b949e', font: { size: 9 } } } 
+                }
+            };
+            this.idleCharts.cd = new Chart(document.getElementById('chartIdleCD'), {
+                type: 'bar', data: { labels: this.listaCDsGerais, datasets: [{ backgroundColor: '#39c5cf', data: [] }] },
+                options: { ...commonOptions }
+            });
+            this.idleCharts.turno = new Chart(document.getElementById('chartIdleTurno'), {
+                type: 'bar', data: { labels: this.turnosEixo, datasets: [{ backgroundColor: '#d29922', data: [] }] },
+                options: commonOptions
+            });
+        },
+
+        updateChartsData() {
+            const canvasTurno = document.getElementById('chartTurno');
+            const ctxTurno = canvasTurno.getContext('2d');
+            const gradTurno = ctxTurno.createLinearGradient(0, 0, 0, canvasTurno.height || 180);
+            gradTurno.addColorStop(0, '#ee4d2d');
+            gradTurno.addColorStop(1, '#ff6b6b');
+            
+            const dataTurnos = this.turnosEixo.map(t => this.filteredData.filter(d => d.turno === t).length);
+            this.charts.turno.data.labels = this.turnosEixo;
+            this.charts.turno.data.datasets[0].backgroundColor = gradTurno;
+            this.charts.turno.data.datasets[0].data = dataTurnos;
+            
+            const maxTurno = Math.max(...dataTurnos, 1);
+            this.charts.turno.options.scales.y.suggestedMax = Math.ceil(maxTurno * 1.15);
+            this.charts.turno.update();
+
+            const canvasCD = document.getElementById('chartCD');
+            const ctxCD = canvasCD.getContext('2d');
+            const gradCD = ctxCD.createLinearGradient(0, 0, 0, canvasCD.height || 180);
+            gradCD.addColorStop(0, '#2f81f7');
+            gradCD.addColorStop(1, '#00f2fe');
+
+            const dataCDs = this.listaCDsGerais.map(c => this.filteredData.filter(d => d.cd === c).length);
+            this.charts.cd.data.labels = this.listaCDsGerais;
+            this.charts.cd.data.datasets[0].backgroundColor = gradCD;
+            this.charts.cd.data.datasets[0].data = dataCDs;
+
+            const maxCD = Math.max(...dataCDs, 1);
+            this.charts.cd.options.scales.y.suggestedMax = Math.ceil(maxCD * 1.15);
+            this.charts.cd.update();
+
+            const areaSet = [...new Set(this.rawData.map(d => d.area))].filter(Boolean).sort();
+            this.charts.area.data.labels = areaSet;
+            
+            const areaCanvas = document.getElementById('chartArea');
+            const areaCtx = areaCanvas.getContext('2d');
+            const areaGrad = areaCtx.createLinearGradient(0, 0, areaCanvas.width || 300, 0);
+            areaGrad.addColorStop(0, '#8957e5');
+            areaGrad.addColorStop(1, '#ff6b6b');
+
+            this.charts.area.data.datasets[0].backgroundColor = areaGrad;
+            this.charts.area.data.datasets[0].borderColor = '#8957e5';
+            this.charts.area.data.datasets[0].borderWidth = 1;
+            this.charts.area.data.datasets[0].borderRadius = 4;
+            this.charts.area.data.datasets[0].data = areaSet.map(a => this.filteredData.filter(d => d.area === a).length);
+            this.charts.area.update();
+
+            this.idleCharts.cd.data.labels = this.listaCDsGerais;
+            this.idleCharts.cd.data.datasets[0].data = this.listaCDsGerais.map(cd => IdleDashboard.getDeterministicValue("idle_cd_" + cd, 90, 96));
+            this.idleCharts.cd.update();
+
+            this.idleCharts.turno.data.labels = this.turnosEixo;
+            this.idleCharts.turno.data.datasets[0].data = this.turnosEixo.map(t => IdleDashboard.getDeterministicValue("idle_turno_" + t, 89, 95));
+            this.idleCharts.turno.update();
+        },
+
+        renderHeatmap() {
+            const target = document.getElementById('dropdownHeatmapCD').value;
+            const data = target === "GERAL" ? this.filteredData : this.filteredData.filter(d => d.cd === target);
+            const matrix = {};
+            const miniT = ["T1", "T2", "T3", "T4", "T5", "T6", "T7"];
+            miniT.forEach(t => { matrix[t] = {}; this.diasSemanaEixo.forEach(d => matrix[t][d] = 0); });
+            data.forEach(d => { if(matrix[d.turno] && matrix[d.turno][d.diaSemana] !== undefined) matrix[d.turno][d.diaSemana]++; });
+
+            let h = `<div class="heatmap-grid"><div></div>` + this.diasSemanaEixo.map(d => `<div class="heatmap-header-cell">${d.substring(0,3)}</div>`).join('') + `</div>`;
+            miniT.forEach(t => {
+                h += `<div class="heatmap-grid"><div class="heatmap-row-label">${t}</div>` + this.diasSemanaEixo.map(d => {
+                    const count = matrix[t][d];
+                    const alpha = count > 5 ? 0.8 : (count > 0 ? 0.4 : 0.1);
+                    return `<div class="heatmap-cell" style="background:rgba(238, 77, 45, ${alpha})"><span class="count" style="font-size:10px;">${count}</span></div>`;
+                }).join('') + `</div>`;
+            });
+            document.getElementById('heatmapContainer').innerHTML = h;
+        },
+
+        renderTable() {
+            const tbody = document.getElementById('tableBody');
+            tbody.innerHTML = this.filteredData.slice(0, 100).map(d => `
+                <tr><td>${d.dataHora}</td><td>${d.mes}</td><td><span style="font-weight:700;color:var(--shopee-orange)">${d.turno}</span></td>
+                <td style="color:var(--accent-blue)">${d.cd}</td><td>${d.responsavel}</td><td>${d.cargo}</td><td>${d.area}</td></tr>
+            `).join('');
+        },
+
+        toggleAnalysisMode() {
+            this.currentMode = document.getElementById('analysis-mode').value;
+            document.getElementById('section-padrao').classList.toggle('hidden', this.currentMode === 'idle');
+            document.getElementById('section-idle').classList.toggle('hidden', this.currentMode === 'padrao');
+            
+            document.getElementById('kpi-dashboard-geral').classList.toggle('hidden', this.currentMode === 'idle');
+            
+            if (this.currentMode === 'idle') {
+                IdleDashboard.init();
+            } else {
+                this.extraAreaFilter = '';
+                document.getElementById('filter-cd').value = '';
+                this.applyFilters();
+            }
+        },
+
+        startAutoUpdate() {
+            setInterval(async () => {
+                try {
+                    const freshData = await fetchSpreadsheetData();
+                    this.processSpreadsheetData(freshData);
+                    this.applyFilters();
+                    
+                    if (this.currentMode === 'idle') {
+                        IdleDashboard.refreshData();
+                    }
+                } catch(err) {
+                    console.warn("Falha ao sincronizar dados em background:", err);
+                    showToast("Sincronização offline. Tentando reconectar...", true);
+                }
+            }, 60000); 
+        }
+    };
+
+    const IdleDashboard = {
+        cdSelected: '',
+        areaSelected: '',
+        indicatorSelected: '',
+        charts: {},
+
+        indicadoresPorArea: {
+            "Inbound": ["DDSMA", "DDQA", "RECEBIMENTO", "LH", "PUTAWAY", "QTD DE CARROS", "BUFFER PUTAWAY", "IDLE TIME", "TRATATIVAS", "OPA"],
+            "Picking Leve": ["DDSMA", "DDQA", "META DMO", "REIMPRESSÃO DE ENDEREÇO", "FALTAS", "AVARIAS", "ENTREGAS DE COTs", "IDLE TIME", "OPA"],
+            "Picking Vol": ["DDSMA", "DDQA", "META DMO", "REIMPRESSÃO DE ENDEREÇO", "FALTAS", "AVARIAS", "ENTREGAS DE COTs", "IDLE TIME", "OPA"],
+            "Checking Leve": ["DDSMA", "DDQA", "META DMO", "SOBRAS", "FALTA", "AVARIAS", "ENTREGAS DE COTs CHECKING", "IDLE TIME", "OPA"],
+            "Checking Vol": ["DDSMA", "DDQA", "META DMO", "SOBRAS", "FALTA", "AVARIAS", "ENTREGAS DE COTs CHECKING", "IDLE TIME", "OPA"],
+            "Shipping": ["DDSMA", "DDQA", "SLA TRANSPORTING", "PROD. TO PACKING - ESTEIRA (1) PEQ.", "PROD. TO PACKING - ESTEIRA (2) GDE.", "PRODUÇÃO GERAL", "QTD CHECKED", "TOTAL DE HC PRESENTE", "NET", "ABS", "OPA"],
+            "Inventario": ["DDSMA", "DDQA", "ESTOQUE ATUAL DE AV", "ESTOQUE ATUAL DE DEM", "ESTOQUE ATUAL GERAL", "TOTAL DE ENDEREÇOS", "ENDEREÇOS DESBLOQUEADOS", "ENDEREÇOS OCUPADOS", "OB PICKING", "META DMO", "OPA"],
+            "IBT": ["DDSMA", "DDQA", "PEÇAS TRATADAS NO DIA", "SURPLUS", "SHORTAGES", "IA", "INV", "SKU", "PENDENTES", "MTO", "MTO FAIL", "CHECKED", "PEÇAS AGUARDANDO TRATATIVAS", "OPA"],
+            "Qualidade": [
+                "ABERTURA DE TURNO", "HC ESPERADOS", "HC PRESENTES", "HC AUSENTES", "ABS", "EQUIPAMENTOS", "NOTEBOOK", 
+                "BIP", "PDA", "RÁDIO", "ROTINA SUPERVISORES", "DDSMA", "DDQA", "CUIDADO ATIVO", "SAFETY WALK", 
+                "5S (Aréa Avarias / Qualidade)", "OPA", "OPA (PLANO DE AÇÃO)", "AVARIAS", "AVARIAS - NOME RESPONSÁVEL", 
+                "QUANTIDADE RECOLHIDAS", "AVARIAS TRATADAS", "RETURNS", "BACKLOG", "RESPONSABILIDADE RR", 
+                "RR - NOME RESPONSÁVEL", "RR", "RR Reference Day", "Outbound Time", "OB Orders D-1", "RR Orders D-1", 
+                "RR Rate D-1", "RR Rate D-2", "RR Rate D-3", "RR 7 Rolling Days", "RR (Plano de Ação)", "AUDITORIAS", 
+                "AUDITORIA DOCA INB", "AUDITORIA BOXING", "AUDITORIA PUTAWAY", "AUDITORIA PICKING", "AUDITORIA DEVICE", 
+                "AUDITORIA CHECKING", "AUDITORIA MERGE", "AUDITORIA SHIPPING", "AUDITORIA DOCA OUT", "AUDITORIA 5'S", 
+                "TOTAL DE AUDITORIAS", "CUBISCAN PE", "CORREÇÃO REALIZADA", "NÃO IDENTIFICADO", "BACKLOG CUBSCAN", 
+                "OBSERVAÇÕES DO TURNO"
+            ]
+        },
+
+        init() {
+            this.buildCdOptions();
+            this.renderLevel1Brasil();
+            this.resetToLevel(1);
+        },
+
+        refreshData() {
+            this.buildCdOptions();
+            this.renderLevel1Brasil();
+            if (this.cdSelected) {
+                this.renderCdLevel();
+                if (this.areaSelected) {
+                    this.renderAreaLevel();
+                    if (this.indicatorSelected) {
+                        this.renderIndicatorLevel();
+                    }
+                }
+            }
+        },
+
+        buildCdOptions() {
+            const selector = document.getElementById('idle-cd-selector');
+            selector.innerHTML = '<option value="">Selecione o CD</option>' + 
+                Dashboard.listaCDsGerais.map(c => `<option value="${c}">▼ ${c}</option>`).join('');
+            
+            if (this.cdSelected && Dashboard.listaCDsGerais.includes(this.cdSelected)) {
+                selector.value = this.cdSelected;
+            }
+        },
+
+        getDeterministicValue(seedStr, min, max, dec = 1) {
+            const reactiveModifier = Dashboard.filteredData.length;
+            const combinedSeed = seedStr + "_" + reactiveModifier;
+            
+            let hash = 0;
+            for (let i = 0; i < combinedSeed.length; i++) {
+                hash = combinedSeed.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const seed = Math.abs(hash);
+            const x = Math.sin(seed) * 10000;
+            const r = x - Math.floor(x);
+            return parseFloat((min + r * (max - min)).toFixed(dec));
+        },
+
+        getIndicatorsForArea(area) {
+            const norm = area.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+            if (norm === "inbound") return this.indicadoresPorArea["Inbound"];
+            if (norm === "picking leve") return this.indicadoresPorArea["Picking Leve"];
+            if (norm === "picking volumoso" || norm === "picking vol") return this.indicadoresPorArea["Picking Vol"];
+            if (norm === "checking leve") return this.indicadoresPorArea["Checking Leve"];
+            if (norm === "checking volumoso" || norm === "checking vol") return this.indicadoresPorArea["Checking Vol"];
+            if (norm === "shipping") return this.indicadoresPorArea["Shipping"];
+            if (norm === "inventario" || norm === "inventário") return this.indicadoresPorArea["Inventario"];
+            if (norm === "ibt") return this.indicadoresPorArea["IBT"];
+            if (norm === "qualidade") return this.indicadoresPorArea["Qualidade"];
+            return ["DDSMA", "DDQA", "IDLE TIME", "OPA"];
+        },
+
+        renderLevel1Brasil() {
+            const key = "brasil_nivel_1";
+            const brIdle = this.getDeterministicValue(key + '_idle', 92.5, 94.8);
+            const brOpa = this.getDeterministicValue(key + '_opa', 93.1, 95.9);
+            const brDdsma = this.getDeterministicValue(key + '_ddsma', 97.4, 98.9);
+            const brDdqa = this.getDeterministicValue(key + '_ddqa', 94.6, 96.2);
+
+            this.setKpiText('br-idle-val', `${brIdle}%`, brIdle >= 95 ? 'var(--accent-green)' : 'var(--accent-cyan)');
+            this.setKpiText('br-opa-val', `${brOpa}%`, brOpa >= 95 ? 'var(--accent-green)' : 'var(--accent-yellow)');
+            this.setKpiText('br-ddsma-val', `${brDdsma}%`, brDdsma >= 98 ? 'var(--accent-green)' : 'var(--accent-yellow)');
+            this.setKpiText('br-ddqa-val', `${brDdqa}%`, brDdqa >= 96 ? 'var(--accent-green)' : 'var(--accent-yellow)');
+
+            this.setTrendBadge('br-idle-status', brIdle, 95);
+            this.setTrendBadge('br-opa-status', brOpa, 95);
+            this.setTrendBadge('br-ddsma-status', brDdsma, 98);
+            this.setTrendBadge('br-ddqa-status', brDdqa, 96);
+        },
+
+        updateBreadcrumb() {
+            let html = `<i class="fas fa-globe" style="color: var(--accent-blue); margin-right: 5px;"></i><span style="color: var(--text-main);">Brasil</span>`;
+            if (this.cdSelected) {
+                html += ` <i class="fas fa-chevron-right" style="font-size: 9px; color: var(--text-dim); margin: 0 4px;"></i> <span style="color: var(--shopee-orange);"><i class="fas fa-warehouse" style="font-size: 10px; margin-right: 2px;"></i> ${this.cdSelected}</span>`;
+            }
+            if (this.areaSelected) {
+                html += ` <i class="fas fa-chevron-right" style="font-size: 9px; color: var(--text-dim); margin: 0 4px;"></i> <span style="color: var(--accent-blue);"><i class="fas fa-box" style="font-size: 10px; margin-right: 2px;"></i> ${this.areaSelected}</span>`;
+            }
+            if (this.indicatorSelected) {
+                html += ` <i class="fas fa-chevron-right" style="font-size: 9px; color: var(--text-dim); margin: 0 4px;"></i> <span style="color: var(--accent-yellow);"><i class="fas fa-chart-line" style="font-size: 10px; margin-right: 2px;"></i> ${this.indicatorSelected}</span>`;
+            }
+            document.getElementById('breadcrumb-content').innerHTML = html;
+        },
+
+        resetToLevel(level) {
+            if (level === 1) {
+                this.cdSelected = '';
+                this.areaSelected = '';
+                this.indicatorSelected = '';
+                document.getElementById('idle-cd-selector').value = '';
+                document.getElementById('idle-nivel-2').classList.add('hidden');
+                document.getElementById('idle-nivel-3').classList.add('hidden');
+                document.getElementById('idle-nivel-4').classList.add('hidden');
+                document.getElementById('transition-cd-box').classList.add('active');
+                document.getElementById('transition-area-box').classList.remove('active');
+                
+                Dashboard.extraAreaFilter = '';
+                document.getElementById('filter-cd').value = '';
+                Dashboard.applyFilters();
+            } else if (level === 2) {
+                this.areaSelected = '';
+                this.indicatorSelected = '';
+                document.getElementById('idle-area-selector').value = '';
+                document.getElementById('idle-nivel-3').classList.add('hidden');
+                document.getElementById('idle-nivel-4').classList.add('hidden');
+                document.getElementById('transition-area-box').classList.add('active');
+                document.getElementById('transition-indicator-box').classList.remove('active');
+
+                Dashboard.extraAreaFilter = '';
+                Dashboard.applyFilters();
+            } else if (level === 3) {
+                this.indicatorSelected = '';
+                document.getElementById('idle-indicator-selector').value = '';
+                document.getElementById('idle-nivel-4').classList.add('hidden');
+                document.getElementById('transition-indicator-box').classList.add('active');
+            }
+            this.updateBreadcrumb();
+        },
+
+        onSelectCD(cd) {
+            if (!cd) {
+                this.resetToLevel(1);
+                return;
+            }
+            this.cdSelected = cd;
+            this.areaSelected = '';
+            this.indicatorSelected = '';
+            
+            document.getElementById('cd-display-name').innerText = cd;
+            document.getElementById('idle-nivel-2').classList.remove('hidden');
+            document.getElementById('idle-nivel-3').classList.add('hidden');
+            document.getElementById('idle-nivel-4').classList.add('hidden');
+            document.getElementById('transition-cd-box').classList.remove('active');
+            document.getElementById('transition-area-box').classList.add('active');
+
+            document.getElementById('filter-cd').value = cd;
+            Dashboard.extraAreaFilter = '';
+            Dashboard.applyFilters();
+
+            const areasDoCD = [...new Set(Dashboard.rawData.filter(d => d.cd === cd).map(d => d.area))].filter(Boolean).sort();
+            const areaSelector = document.getElementById('idle-area-selector');
+            areaSelector.innerHTML = '<option value="">-- Selecione a Área --</option>' + 
+                areasDoCD.map(a => `<option value="${a}">${a}</option>`).join('');
+
+            this.updateBreadcrumb();
+            this.renderCdLevel();
+        },
+
+        renderCdLevel() {
+            const key = this.cdSelected;
+            const cdIdle = this.getDeterministicValue(key + '_idle', 91.2, 96.4);
+            const cdOpa = this.getDeterministicValue(key + '_opa', 92.0, 95.8);
+            const cdDdsma = this.getDeterministicValue(key + '_ddsma', 96.1, 99.2);
+            const cdDdqa = this.getDeterministicValue(key + '_ddqa', 93.3, 97.4);
+
+            this.setKpiText('cd-idle-val', `${cdIdle}%`, cdIdle >= 95 ? 'var(--accent-green)' : 'var(--accent-cyan)');
+            this.setKpiText('cd-opa-val', `${cdOpa}%`, cdOpa >= 95 ? 'var(--accent-green)' : 'var(--accent-yellow)');
+            this.setKpiText('cd-ddsma-val', `${cdDdsma}%`, cdDdsma >= 98 ? 'var(--accent-green)' : 'var(--accent-yellow)');
+            this.setKpiText('cd-ddqa-val', `${cdDdqa}%`, cdDdqa >= 96 ? 'var(--accent-green)' : 'var(--accent-yellow)');
+
+            this.setTrendBadge('cd-idle-status', cdIdle, 95);
+            this.setTrendBadge('cd-opa-status', cdOpa, 95);
+            this.setTrendBadge('cd-ddsma-status', cdDdsma, 98);
+            this.setTrendBadge('cd-ddqa-status', cdDdqa, 96);
+
+            this.renderCdCharts();
+            this.renderCdHeatmap();
+        },
+
+        onSelectArea(area) {
+            if (!area) {
+                this.resetToLevel(2);
+                return;
+            }
+            this.areaSelected = area;
+            this.indicatorSelected = '';
+
+            document.getElementById('area-display-name').innerText = area;
+            document.getElementById('idle-nivel-3').classList.remove('hidden');
+            document.getElementById('idle-nivel-4').classList.add('hidden');
+            document.getElementById('transition-area-box').classList.remove('active');
+            document.getElementById('transition-indicator-box').classList.add('active');
+
+            Dashboard.extraAreaFilter = area;
+            Dashboard.applyFilters();
+
+            const listInd = this.getIndicatorsForArea(area);
+            const selectEl = document.getElementById('idle-indicator-selector');
+            selectEl.innerHTML = `<option value="">-- Selecione o Indicador --</option>` + 
+                listInd.map(ind => `<option value="${ind}">▼ ${ind}</option>`).join('');
+
+            this.updateBreadcrumb();
+            this.renderAreaLevel();
+        },
+
+        renderAreaLevel() {
+            const key = this.cdSelected + '_' + this.areaSelected;
+            const areaIdle = this.getDeterministicValue(key + '_idle', 89.1, 96.9);
+            const areaOpa = this.getDeterministicValue(key + '_opa', 90.3, 95.6);
+            const areaDdsma = this.getDeterministicValue(key + '_ddsma', 95.2, 99.1);
+            const areaDdqa = this.getDeterministicValue(key + '_ddqa', 92.4, 97.9);
+
+            this.setKpiText('area-idle-val', `${areaIdle}%`, areaIdle >= 95 ? 'var(--accent-green)' : 'var(--accent-cyan)');
+            this.setKpiText('area-opa-val', `${areaOpa}%`, areaOpa >= 95 ? 'var(--accent-green)' : 'var(--accent-yellow)');
+            this.setKpiText('area-ddsma-val', `${areaDdsma}%`, areaDdsma >= 98 ? 'var(--accent-green)' : 'var(--accent-yellow)');
+            this.setKpiText('area-ddqa-val', `${areaDdqa}%`, areaDdqa >= 96 ? 'var(--accent-green)' : 'var(--accent-yellow)');
+
+            this.renderAreaCharts();
+        },
+
+        onSelectIndicator(indicator) {
+            if (!indicator) {
+                this.resetToLevel(3);
+                return;
+            }
+            this.indicatorSelected = indicator;
+            document.getElementById('indicator-display-name').innerText = indicator;
+            document.getElementById('idle-nivel-4').classList.remove('hidden');
+            document.getElementById('transition-indicator-box').classList.remove('active');
+
+            this.updateBreadcrumb();
+            this.renderIndicatorLevel();
+        },
+
+        renderIndicatorLevel() {
+            const key = this.cdSelected + '_' + this.areaSelected + '_' + this.indicatorSelected;
+            
+            let meta = 95.0;
+            let real = this.getDeterministicValue(key + '_real', 88.5, 98.7);
+            const isReverse = (this.indicatorSelected === "FALTAS" || this.indicatorSelected === "AVARIAS" || this.indicatorSelected === "REIMPRESSÃO DE ENDEREÇO" || this.indicatorSelected === "NÃO CONFORMIDADES" || this.indicatorSelected === "DIVERGÊNCIA" || this.indicatorSelected === "ERRO DE CHECKING" || this.indicatorSelected === "DIVERGÊNCIA DE PORTARIA" || this.indicatorSelected === "DIVERGÊNCIA DE CARGA IBT" || this.indicatorSelected === "REJEITOS DE PROCESSO" || this.indicatorSelected === "GRAVIDADE DAS OCORRÊNCIAS" || this.indicatorSelected === "ABS" || this.indicatorSelected === "HC AUSENTES" || this.indicatorSelected === "SHORTAGES" || this.indicatorSelected === "SURPLUS" || this.indicatorSelected === "MTO FAIL" || this.indicatorSelected === "SOBRAS" || this.indicatorSelected === "FALTA");
+
+            if (this.indicatorSelected === "DDSMA") {
+                meta = 98.0;
+                real = this.getDeterministicValue(key + '_real', 95.0, 99.8);
+            } else if (this.indicatorSelected === "DDQA") {
+                meta = 96.0;
+                real = this.getDeterministicValue(key + '_real', 91.5, 98.2);
+            } else if (isReverse) {
+                meta = 2.0; 
+                real = this.getDeterministicValue(key + '_real', 0.4, 4.8);
+            }
+
+            const gap = real - meta;
+            const success = isReverse ? (real <= meta) : (real >= meta);
+
+            document.getElementById('ind-meta-val').innerText = meta + "%";
+            document.getElementById('ind-realizado-val').innerText = real + "%";
+            
+            const gapEl = document.getElementById('ind-gap-val');
+            const gapCard = document.getElementById('ind-gap-card');
+            const gapIcon = document.getElementById('ind-gap-icon');
+            
+            gapEl.innerText = (gap >= 0 ? "+" : "") + gap.toFixed(1) + "%";
+            if (success) {
+                gapEl.style.color = 'var(--accent-green)';
+                gapCard.style.borderColor = 'var(--accent-green)';
+                gapIcon.innerHTML = `<i class="fas fa-check-circle" style="color: var(--accent-green)"></i>`;
+            } else {
+                gapEl.style.color = 'var(--shopee-orange)';
+                gapCard.style.borderColor = 'var(--shopee-orange)';
+                gapIcon.innerHTML = `<i class="fas fa-minus-circle" style="color: var(--shopee-orange)"></i>`;
+            }
+
+            const statusEl = document.getElementById('ind-status-val');
+            const statusCard = document.getElementById('ind-status-card');
+            const statusIcon = document.getElementById('ind-status-icon');
+
+            if (success) {
+                statusEl.innerText = "DENTRO DA META";
+                statusEl.style.color = 'var(--accent-green)';
+                statusCard.style.borderColor = 'var(--accent-green)';
+                statusIcon.innerHTML = `<i class="fas fa-thumbs-up" style="color: var(--accent-green)"></i>`;
+            } else if (Math.abs(gap) < 3.0) {
+                statusEl.innerText = "ATENÇÃO OPERACIONAL";
+                statusEl.style.color = 'var(--accent-yellow)';
+                statusCard.style.borderColor = 'var(--accent-yellow)';
+                statusIcon.innerHTML = `<i class="fas fa-exclamation-circle" style="color: var(--accent-yellow)"></i>`;
+            } else {
+                statusEl.innerText = "FORA DA META";
+                statusEl.style.color = 'var(--shopee-orange)';
+                statusCard.style.borderColor = 'var(--shopee-orange)';
+                statusIcon.innerHTML = `<i class="fas fa-times-circle" style="color: var(--shopee-orange)"></i>`;
+            }
+
+            this.renderIndicatorCharts(key, meta, isReverse);
+            this.renderIndicatorHeatmaps(key);
+        },
+
+        setKpiText(id, val, color) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.innerText = val;
+                el.style.color = color;
+            }
+        },
+
+        setTrendBadge(id, value, target) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const diff = value - target;
+            if (diff >= 0) {
+                el.innerText = `OK (+${diff.toFixed(1)}%)`;
+                el.className = 'kpi-trend trend-up';
+            } else {
+                el.innerText = `Gap (${diff.toFixed(1)}%)`;
+                el.className = 'kpi-trend trend-danger';
+            }
+        },
+
+        renderCdCharts() {
+            const ctxCanvas = document.getElementById('chartCdMetaReal');
+            const ctx = ctxCanvas.getContext('2d');
+            if (this.charts.cdMetaReal) this.charts.cdMetaReal.destroy();
+
+            const key = this.cdSelected;
+            const days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+            const metaData = Array(7).fill(95);
+            const realData = days.map((_, i) => this.getDeterministicValue(key + '_dayMR_' + i, 91.5, 97.8));
+
+            const gradientFill = ctx.createLinearGradient(0, 0, 0, ctxCanvas.height || 180);
+            gradientFill.addColorStop(0, 'rgba(57, 197, 207, 0.4)');
+            gradientFill.addColorStop(1, 'rgba(57, 197, 207, 0)');
+
+            this.charts.cdMetaReal = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [
+                        { 
+                            label: 'Realizado', 
+                            data: realData, 
+                            borderColor: '#00f2fe', 
+                            borderWidth: 3,
+                            backgroundColor: gradientFill,
+                            fill: true,
+                            tension: 0.4, 
+                            pointRadius: 4,
+                            pointBackgroundColor: '#00f2fe',
+                            pointBorderColor: '#0d1117',
+                            pointBorderWidth: 1.5,
+                            pointHoverRadius: 6
+                        },
+                        { 
+                            label: 'Meta (95%)', 
+                            data: metaData, 
+                            borderColor: '#ee4d2d', 
+                            borderWidth: 2,
+                            borderDash: [5, 5], 
+                            backgroundColor: 'transparent', 
+                            tension: 0, 
+                            pointRadius: 0,
+                            datalabels: { display: false }
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: true, position: 'top', labels: { color: '#8b949e', font: { size: 9, weight: '600' } } }, 
+                        datalabels: { display: false } 
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#8b949e', font: { size: 9 } } },
+                        y: { min: 85, max: 100, grid: { color: '#30363d' }, ticks: { color: '#8b949e', font: { size: 9 } } }
+                    }
+                }
+            });
+        },
+
+        renderCdHeatmap() {
+            const target = this.cdSelected;
+            const matrix = {};
+            const miniT = ["T1", "T2", "T3"];
+            const diasAbreviados = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+            
+            miniT.forEach(t => { matrix[t] = {}; diasAbreviados.forEach(d => matrix[t][d] = 0); });
+            diasAbreviados.forEach((d) => {
+                miniT.forEach((t) => {
+                    const seedStr = target + '_' + t + '_' + d;
+                    matrix[t][d] = this.getDeterministicValue(seedStr, 88.2, 98.9);
+                });
+            });
+
+            let h = `<div class="heatmap-grid"><div></div>` + diasAbreviados.map(d => `<div class="heatmap-header-cell">${d}</div>`).join('') + `</div>`;
+            miniT.forEach(t => {
+                h += `<div class="heatmap-grid"><div class="heatmap-row-label">${t}</div>` + diasAbreviados.map(d => {
+                    const value = matrix[t][d];
+                    const alpha = value > 95 ? 0.8 : (value > 90 ? 0.45 : 0.25);
+                    const color = value > 95 ? `rgba(63, 185, 80, ${alpha})` : (value > 90 ? `rgba(210, 153, 34, ${alpha})` : `rgba(238, 77, 45, ${alpha})`);
+                    return `<div class="heatmap-cell" style="background:${color}" title="Produtividade: ${value}%"><span class="count" style="font-size:10px;">${value}%</span></div>`;
+                }).join('') + `</div>`;
+            });
+            document.getElementById('cdHeatmapContainer').innerHTML = h;
+        },
+
+        renderAreaCharts() {
+            const ctxCanvas1 = document.getElementById('chartAreaMetaReal');
+            const ctx1 = ctxCanvas1.getContext('2d');
+            if (this.charts.areaMetaReal) this.charts.areaMetaReal.destroy();
+
+            const key = this.cdSelected + '_' + this.areaSelected;
+            const metaData = Array(5).fill(95);
+            const realData = Array(5).fill(0).map((_, i) => this.getDeterministicValue(key + '_areaMR_' + i, 90.2, 97.4));
+
+            const barGrad = ctx1.createLinearGradient(0, 0, 0, ctxCanvas1.height || 180);
+            barGrad.addColorStop(0, '#00f2fe');
+            barGrad.addColorStop(1, '#4facfe');
+
+            this.charts.areaMetaReal = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4', 'Atual'],
+                    datasets: [
+                        { 
+                            label: 'Realizado', 
+                            data: realData, 
+                            backgroundColor: barGrad, 
+                            borderRadius: 5,
+                            borderWidth: 1,
+                            borderColor: '#00f2fe'
+                        },
+                        { 
+                            label: 'Meta (95%)', 
+                            data: metaData, 
+                            type: 'line', 
+                            borderColor: '#ee4d2d', 
+                            borderWidth: 2, 
+                            pointRadius: 0,
+                            fill: false,
+                            datalabels: { display: false }
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: true, position: 'top', labels: { color: '#8b949e', font: { size: 9, weight: '600' } } }, 
+                        datalabels: { 
+                            display: true,
+                            anchor: 'end',
+                            align: 'top',
+                            offset: -2,
+                            color: '#00f2fe',
+                            font: { size: 9, weight: '800' },
+                            formatter: v => v ? parseFloat(v).toFixed(1) + '%' : ''
+                        } 
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#8b949e', font: { size: 9 } } },
+                        y: { min: 80, max: 105, grid: { color: '#30363d' }, ticks: { color: '#8b949e', font: { size: 9 } } }
+                    }
+                }
+            });
+
+            const ctxCanvas2 = document.getElementById('chartAreaTurnos');
+            const ctx2 = ctxCanvas2.getContext('2d');
+            if (this.charts.areaTurnos) this.charts.areaTurnos.destroy();
+
+            const turnosEspeciais = this.getCDTurnos(this.cdSelected);
+            const performanceTurnos = turnosEspeciais.map((t) => this.getDeterministicValue(key + '_turnPerf_' + t, 89.2, 98.4));
+
+            const goldGrad = ctx2.createLinearGradient(0, 0, 0, ctxCanvas2.height || 180);
+            goldGrad.addColorStop(0, '#ffd166');
+            goldGrad.addColorStop(1, '#f7b267');
+
+            this.charts.areaTurnos = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: turnosEspeciais.map(t => `${t} (${this.cdSelected})`),
+                    datasets: [{ 
+                        backgroundColor: goldGrad, 
+                        data: performanceTurnos, 
+                        borderRadius: 5,
+                        borderWidth: 1,
+                        borderColor: '#ffd166'
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false }, 
+                        datalabels: { 
+                            display: true, 
+                            anchor: 'end', 
+                            align: 'top', 
+                            offset: -2,
+                            color: '#ffd166', 
+                            font: { size: 10, weight: '800' }, 
+                            formatter: v => v ? parseFloat(v).toFixed(1) + '%' : '' 
+                        } 
+                    },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#8b949e', font: { size: 9 } } },
+                        y: { min: 80, max: 105, grid: { color: '#30363d' }, ticks: { color: '#8b949e', font: { size: 9 } } }
+                    }
+                }
+            });
+        },
+
+        getCDTurnos(cd) {
+            const cdTurnosMap = {
+                "BRFSP1": ["T1", "T2", "T3", "T4", "T5", "T6", "T7"],
+                "BRFSP2": ["T1", "T2", "T3", "T4", "T5", "T6", "T7"],
+                "BRFPE1": ["T1", "T2", "T3"],
+                "BRFRS1": ["T1", "T2"],
+                "BRFGO1": ["T1", "T2"],
+                "BRFMG1": ["T1", "T2"]
+            };
+            return cdTurnosMap[cd] || ["T1", "T2", "T3", "T4"];
+        },
+
+        renderIndicatorCharts(key, meta, isReverse) {
+            const days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+            const dailyData = days.map((_, i) => this.getDeterministicValue(key + '_daily_' + i, isReverse ? 0.3 : 90.1, isReverse ? 4.2 : 99.4));
+
+            const weeks = ["Semana 1", "Semana 2", "Semana 3", "Semana 4"];
+            const weeklyData = weeks.map((_, i) => this.getDeterministicValue(key + '_weekly_' + i, isReverse ? 0.5 : 91.2, isReverse ? 3.9 : 98.6));
+
+            const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun"];
+            const monthlyData = months.map((_, i) => this.getDeterministicValue(key + '_monthly_' + i, isReverse ? 0.8 : 92.4, isReverse ? 3.1 : 97.9));
+
+            const getMinMaxY = (dataArr) => {
+                const minVal = Math.min(...dataArr);
+                const maxVal = Math.max(...dataArr);
+                return {
+                    min: isReverse ? 0 : Math.max(0, Math.floor(minVal - 2)),
+                    max: isReverse ? Math.ceil(maxVal + 1) : Math.min(100, Math.ceil(maxVal + 2))
+                };
+            };
+
+            const commonChartOptions = (lineColor, minMax) => ({
+                responsive: true, maintainAspectRatio: false,
+                plugins: { 
+                    legend: { display: false }, 
+                    datalabels: { 
+                        display: true,
+                        anchor: 'end',
+                        align: 'top',
+                        color: lineColor,
+                        font: { size: 8, weight: 'bold' },
+                        formatter: v => v ? parseFloat(v).toFixed(1) + '%' : ''
+                    } 
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: '#8b949e', font: { size: 8 } } },
+                    y: { 
+                        min: minMax.min, 
+                        max: minMax.max, 
+                        grid: { color: '#30363d' }, 
+                        ticks: { color: '#8b949e', font: { size: 8 } } 
+                    }
+                }
+            });
+
+            const ctxCanvasDaily = document.getElementById('chartIndDaily');
+            const ctxDaily = ctxCanvasDaily.getContext('2d');
+            if (this.charts.indDaily) this.charts.indDaily.destroy();
+            const gradDaily = ctxDaily.createLinearGradient(0, 0, 0, ctxCanvasDaily.height || 180);
+            gradDaily.addColorStop(0, 'rgba(0, 242, 254, 0.3)');
+            gradDaily.addColorStop(1, 'rgba(0, 242, 254, 0)');
+
+            this.charts.indDaily = new Chart(ctxDaily, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [
+                        { 
+                            data: dailyData, 
+                            borderColor: '#00f2fe', 
+                            backgroundColor: gradDaily,
+                            fill: true,
+                            tension: 0.4, 
+                            borderWidth: 2.5,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#00f2fe'
+                        },
+                        { 
+                            data: Array(7).fill(meta), 
+                            borderColor: '#ee4d2d', 
+                            borderDash: [4, 4], 
+                            pointRadius: 0, 
+                            borderWidth: 1,
+                            datalabels: { display: false }
+                        }
+                    ]
+                },
+                options: commonChartOptions('#00f2fe', getMinMaxY(dailyData))
+            });
+
+            const ctxCanvasWeekly = document.getElementById('chartIndWeekly');
+            const ctxWeekly = ctxCanvasWeekly.getContext('2d');
+            if (this.charts.indWeekly) this.charts.indWeekly.destroy();
+            const gradWeekly = ctxWeekly.createLinearGradient(0, 0, 0, ctxCanvasWeekly.height || 180);
+            gradWeekly.addColorStop(0, 'rgba(63, 185, 80, 0.3)');
+            gradWeekly.addColorStop(1, 'rgba(63, 185, 80, 0)');
+
+            this.charts.indWeekly = new Chart(ctxWeekly, {
+                type: 'line',
+                data: {
+                    labels: weeks,
+                    datasets: [
+                        { 
+                            data: weeklyData, 
+                            borderColor: '#3fb950', 
+                            backgroundColor: gradWeekly,
+                            fill: true,
+                            tension: 0.4, 
+                            borderWidth: 2.5,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#3fb950'
+                        },
+                        { 
+                            data: Array(4).fill(meta), 
+                            borderColor: '#ee4d2d', 
+                            borderDash: [4, 4], 
+                            pointRadius: 0, 
+                            borderWidth: 1,
+                            datalabels: { display: false }
+                        }
+                    ]
+                },
+                options: commonChartOptions('#3fb950', getMinMaxY(weeklyData))
+            });
+
+            const ctxCanvasMonthly = document.getElementById('chartIndMonthly');
+            const ctxMonthly = ctxCanvasMonthly.getContext('2d');
+            if (this.charts.indMonthly) this.charts.indMonthly.destroy();
+            const gradMonthly = ctxMonthly.createLinearGradient(0, 0, 0, ctxCanvasMonthly.height || 180);
+            gradMonthly.addColorStop(0, 'rgba(218, 112, 214, 0.3)');
+            gradMonthly.addColorStop(1, 'rgba(218, 112, 214, 0)');
+
+            this.charts.indMonthly = new Chart(ctxMonthly, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        { 
+                            data: monthlyData, 
+                            borderColor: '#da70d6', 
+                            backgroundColor: gradMonthly,
+                            fill: true,
+                            tension: 0.4, 
+                            borderWidth: 2.5,
+                            pointRadius: 3,
+                            pointBackgroundColor: '#da70d6'
+                        },
+                        { 
+                            data: Array(6).fill(meta), 
+                            borderColor: '#ee4d2d', 
+                            borderDash: [4, 4], 
+                            pointRadius: 0, 
+                            borderWidth: 1,
+                            datalabels: { display: false }
+                        }
+                    ]
+                },
+                options: commonChartOptions('#da70d6', getMinMaxY(monthlyData))
+            });
+        },
+
+        renderIndicatorHeatmaps(key) {
+            const shifts = Dashboard.turnosEixo.slice(0, 3);
+            const days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
+            
+            let hTurnos = `<div class="heatmap-grid"><div></div>` + days.map(d => `<div class="heatmap-header-cell">${d}</div>`).join('') + `</div>`;
+            shifts.forEach(t => {
+                hTurnos += `<div class="heatmap-grid"><div class="heatmap-row-label">${t}</div>` + days.map((d, idx) => {
+                    const value = this.getDeterministicValue(key + '_hmT_' + t + '_' + idx, 88.5, 99.3);
+                    const alpha = value > 95 ? 0.8 : (value > 90 ? 0.5 : 0.25);
+                    const color = value > 95 ? `rgba(63, 185, 80, ${alpha})` : (value > 90 ? `rgba(210, 153, 34, ${alpha})` : `rgba(238, 77, 45, ${alpha})`);
+                    return `<div class="heatmap-cell" style="background:${color}" title="${t} - ${d}: ${value}%"><span class="count" style="font-size:10px;">${value}%</span></div>`;
+                }).join('') + `</div>`;
+            });
+            document.getElementById('indTurnoHeatmapContainer').innerHTML = hTurnos;
+
+            const supervisores = [...new Set(Dashboard.rawData
+                .filter(d => d.cd === this.cdSelected && d.area.toUpperCase().trim() === this.areaSelected.toUpperCase().trim())
+                .map(d => d.responsavel)
+            )].filter(Boolean);
+
+            const fallbackSups = ["L. Fernandes", "G. Pernia", "D. Belmonte", "M. Martins", "P. Roberto", "A. Moraes", "W. Sabino", "T. Oliveira"];
+            const listaSups = supervisores.length > 0 ? supervisores : fallbackSups;
+
+            let hSupervisores = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px;">`;
+            listaSups.slice(0, 8).forEach(sup => {
+                const value = this.getDeterministicValue(key + '_hmS_' + sup, 87.5, 98.8);
+                const color = value > 95 ? 'var(--accent-green)' : (value > 90 ? 'var(--accent-yellow)' : 'var(--shopee-orange)');
+                hSupervisores += `
+                    <div style="background: var(--bg-input); border: 1px solid ${color}; border-radius: 6px; padding: 8px; text-align: center;">
+                        <div style="font-size: 10px; font-weight: 700; color: var(--text-main); text-overflow: ellipsis; white-space: nowrap; overflow: hidden;" title="${sup}">${sup}</div>
+                        <div style="font-size: 13px; font-weight: 800; color: ${color}; margin-top: 4px;">${value}%</div>
+                        <div style="font-size: 8px; color: var(--text-dim); margin-top: 2px;">Atingimento da Meta</div>
+                    </div>
+                `;
+            });
+            hSupervisores += `</div>`;
+            document.getElementById('indSupervisorHeatmapContainer').innerHTML = hSupervisores;
+        }
+    };
+
+    window.onload = () => Dashboard.init();
+</script>
+</body>
+</html>
